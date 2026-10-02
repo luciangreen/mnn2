@@ -1,0 +1,2103 @@
+MNN2 can treat MNN1 as the deterministic algorithmic reasoning engine and add the interpretive layer: natural language, time series, contextual memory, ranking, signposting, rules, Q&A, nuances, and knowledge application—while preserving data-readable traces.
+
+MNN2 — Prolog AI Agent Program Requirements
+
+1. Project Name
+
+MNN2 — Interpretive Manual Neuronet
+
+2. Purpose
+
+Build an SWI-Prolog interpretive intelligence and chatbot system on top of MNN1.
+
+MNN1 investigates deterministic algorithm discovery, neuroalgorithm composition, optimisation and multivariate reasoning.
+
+MNN2 adds:
+
+* natural-language interpretation;
+* conversational context;
+* time-series reasoning;
+* temporal memory;
+* rule interpretation;
+* question answering;
+* deterministic relevance ranking;
+* signposting;
+* nuance handling;
+* contextual reinterpretation;
+* knowledge application;
+* multi-step analysis;
+* response planning;
+* human-readable explanations;
+* importable user knowledge.
+
+MNN2 should use MNN1 as its principal algorithmic reasoning substrate rather than duplicate it.
+
+⸻
+
+3. Architectural Principle
+
+Use:
+
+MNN1
+=
+algorithmic intelligence
+MNN2
+=
+interpretive intelligence
+
+Therefore:
+
+Language / Documents / Events
+            ↓
+     MNN2 Interpretation
+            ↓
+    Canonical Knowledge
+            ↓
+       Context + Time
+            ↓
+      Goal / Question
+            ↓
+     Relevance Selection
+            ↓
+          MNN1
+            ↓
+   Algorithmic Reasoning
+            ↓
+    MNN2 Interpretation
+            ↓
+     Planned Response
+            ↓
+      Natural Language
+
+Do not make the language interface itself the reasoning engine.
+
+⸻
+
+4. Research Question
+
+Investigate:
+
+Can deterministic Manual Neuronets combine language interpretation, temporal context, explicit rules and algorithmic reasoning to provide useful conversational reasoning without making the underlying reasoning dependent on statistical neural weights?
+
+Secondary questions:
+
+1. Can natural language be mapped to reusable symbolic structures?
+2. Can conversation history be represented as an explicit time series?
+3. Can relevant historical information be selected deterministically?
+4. Can ranking replace or supplement statistical attention for contextual retrieval?
+5. Can signposts identify how statements relate to previous statements?
+6. Can rules expressed in language be converted into executable MNN structures?
+7. Can MNN1 algorithms be selected from ordinary questions?
+8. Can multiple interpretations be maintained where language is ambiguous?
+9. Can answers remain grounded in the source data?
+10. Can reasoning and linguistic presentation remain separate?
+11. Can knowledge from multiple sources be applied compositionally?
+12. Can the system explain why particular information was considered relevant?
+
+⸻
+
+5. Dependencies
+
+MNN2 should integrate with or provide adapters for:
+
+* MNN1;
+* Spec to Algorithm;
+* Starlog;
+* Prolog Inductive Debugger;
+* Loop2;
+* PLOP;
+* AlgebraPLOP;
+* Detlog;
+* Piglog2;
+* AIOC.
+
+MNN2 must not require every dependency for basic chatbot operation.
+
+Use clean adapters.
+
+⸻
+
+6. Main Pipeline
+
+Implement:
+
+User Input
+    ↓
+Language Parsing
+    ↓
+Interpretation
+    ↓
+Canonicalisation
+    ↓
+Reference Resolution
+    ↓
+Nuance Detection
+    ↓
+Temporal Placement
+    ↓
+Context Retrieval
+    ↓
+Signposting
+    ↓
+Relevance Ranking
+    ↓
+Goal / Question Identification
+    ↓
+Rule + Knowledge Selection
+    ↓
+MNN1 Reasoning
+    ↓
+Result Interpretation
+    ↓
+Response Planning
+    ↓
+Natural-Language Response
+    ↓
+Conversation Time Series
+
+The newly interpreted result may itself become input to subsequent reasoning.
+
+⸻
+
+7. Canonical Knowledge Representation
+
+Translate linguistic variations into common structures.
+
+Example:
+
+John owns an apple.
+The apple belongs to John.
+John possesses the apple.
+
+may canonicalise to:
+
+owns(john, apple).
+
+Likewise:
+
+Alice arrived before Bob.
+Bob arrived after Alice.
+
+may share:
+
+before(arrival(alice), arrival(bob)).
+
+Store both:
+
+source_text(...)
+canonical_form(...)
+
+so natural-language provenance is not lost.
+
+⸻
+
+8. Sentence Interpretation
+
+Support common sentence functions including:
+
+* assertion;
+* question;
+* command;
+* rule;
+* definition;
+* correction;
+* qualification;
+* comparison;
+* preference;
+* hypothetical;
+* condition;
+* consequence;
+* explanation;
+* example;
+* counterexample;
+* temporal statement;
+* causal statement;
+* uncertainty statement.
+
+Example:
+
+If a customer buys three products, give them free delivery.
+
+Interpret approximately as:
+
+rule(
+    free_delivery(Customer),
+    [
+        customer(Customer),
+        product_count(Customer, Count),
+        Count >= 3
+    ]
+).
+
+Retain the original sentence.
+
+⸻
+
+9. Interpretation Alternatives
+
+Do not force premature interpretation where ambiguity exists.
+
+Represent:
+
+interpretations(
+    Input,
+    [
+        interpretation(I1, Evidence1),
+        interpretation(I2, Evidence2)
+    ]
+).
+
+Subsequent context may eliminate alternatives.
+
+Where ambiguity materially affects the answer and cannot be resolved, ask the user.
+
+⸻
+
+10. Conversational Time Series
+
+Conversation must not be represented merely as a flat transcript.
+
+Store events:
+
+event(
+    EventId,
+    Time,
+    Speaker,
+    Type,
+    CanonicalContent,
+    SourceText
+).
+
+Example:
+
+t1: John works at A.
+t2: John leaves A.
+t3: John joins B.
+
+Current query:
+
+Where does John work?
+
+MNN2 should reason over the temporal sequence rather than return the oldest matching fact.
+
+⸻
+
+11. Temporal Relations
+
+Support:
+
+before(A,B).
+after(A,B).
+during(A,B).
+overlaps(A,B).
+starts(A,B).
+finishes(A,B).
+current(A).
+supersedes(A,B).
+
+Where appropriate, derive these from timestamps or textual temporal expressions.
+
+Support expressions such as:
+
+yesterday
+tomorrow
+before that
+afterwards
+previously
+currently
+then
+later
+earlier
+at the same time
+until
+since
+
+⸻
+
+12. State Evolution
+
+Represent changing properties as state transitions.
+
+Example:
+
+Monday: box is red.
+Tuesday: box is painted blue.
+
+Do not conclude that its current state is both red and blue unless the domain permits that interpretation.
+
+Represent approximately:
+
+state(box, colour, red, T1).
+transition(box, colour, red, blue, T2).
+state(box, colour, blue, T2).
+
+⸻
+
+13. Temporal MNN Indexes
+
+Create indexes including:
+
+entity → events
+predicate → events
+time → events
+topic → events
+relation → events
+state → events
+speaker → events
+source → events
+
+Question:
+
+What changed with Project A last week?
+
+should retrieve relevant Project A events within the appropriate temporal range rather than scan everything indiscriminately.
+
+⸻
+
+14. Context Model
+
+Maintain explicit contexts.
+
+Possible structure:
+
+context(
+    ContextId,
+    Topic,
+    Participants,
+    ActiveEntities,
+    Goals,
+    RelevantEvents,
+    Rules,
+    OpenQuestions
+).
+
+Contexts may be:
+
+* conversation;
+* project;
+* document;
+* question;
+* subproblem;
+* hypothetical;
+* temporal episode.
+
+Avoid allowing unrelated contexts to contaminate reasoning.
+
+⸻
+
+15. Working Memory
+
+MNN2 extends MNN1 working memory with:
+
+* current utterance;
+* interpretation alternatives;
+* conversational context;
+* temporal context;
+* active entities;
+* pronoun candidates;
+* current topic;
+* user goal;
+* open questions;
+* retrieved facts;
+* applicable rules;
+* relevant algorithms;
+* candidate answers;
+* response plan.
+
+⸻
+
+16. Reference Resolution
+
+Resolve expressions such as:
+
+he
+she
+they
+it
+this
+that
+these
+those
+the former
+the latter
+the algorithm
+the project
+the previous example
+
+Use:
+
+* grammatical compatibility;
+* recency;
+* active topic;
+* semantic type;
+* explicit context;
+* logical consistency.
+
+Keep alternative referents where resolution remains ambiguous.
+
+⸻
+
+17. Signposting
+
+Signposting identifies the functional relationship of a new statement to existing material.
+
+Examples:
+
+however
+therefore
+for example
+in contrast
+because
+similarly
+first
+second
+more importantly
+on the other hand
+in summary
+
+Represent abstractly:
+
+signpost(Statement, contrast, Previous).
+signpost(Statement, evidence_for, Claim).
+signpost(Statement, example_of, Rule).
+signpost(Statement, consequence_of, Cause).
+
+Also infer structural signposts when sufficiently clear from explicit relationships.
+
+⸻
+
+18. Signposting as Reasoning Structure
+
+Signposts should affect interpretation.
+
+Example:
+
+Most birds in this example fly.
+However, Penguin is a penguin.
+
+however signals that the second statement may qualify or contrast with the preceding generalisation.
+
+Do not treat discourse markers merely as decorative words.
+
+⸻
+
+19. Rules
+
+MNN2 should support natural-language rules.
+
+Example:
+
+If X owns Y and Y is red, then X owns something red.
+
+Canonical representation:
+
+rule(
+    owns_red_object(X),
+    [
+        owns(X,Y),
+        colour(Y,red)
+    ]
+).
+
+Rules may be sent to MNN1 for compilation into neuroalgorithms.
+
+⸻
+
+20. Rule Sources
+
+Track whether a rule came from:
+
+built-in system
+user
+document
+dataset
+S2A
+AIOC
+derived rule
+imported algorithm
+
+Never silently confuse user-provided rules with universally established facts.
+
+⸻
+
+21. Q&A Interpretation
+
+Classify questions by required operation.
+
+Examples:
+
+Who...?       → entity retrieval
+What...?      → property/definition
+When...?      → temporal reasoning
+Where...?     → spatial/location reasoning
+Why...?       → causal/explanatory trace
+How...?       → procedure/algorithm
+Which...?     → selection/comparison
+What changed? → temporal difference
+What if...?   → hypothetical reasoning
+
+Question classification should help route the query to appropriate neuroalgorithms.
+
+⸻
+
+22. Question Decomposition
+
+Complex questions should be decomposable.
+
+Example:
+
+Which customer bought the most products last month
+and did they receive free delivery?
+
+may become:
+
+Q1: customers last month
+Q2: product counts
+Q3: maximum customer
+Q4: free-delivery status
+Q5: combine answer
+
+Each subquestion can invoke MNN1 independently.
+
+⸻
+
+23. Deterministic Relevance Ranking
+
+Rank candidate information using explicit criteria.
+
+Potential criteria:
+
+* exact entity match;
+* exact predicate match;
+* question relevance;
+* temporal relevance;
+* current-state relevance;
+* topic relevance;
+* causal relevance;
+* rule dependency;
+* source relationship;
+* specificity;
+* recency where appropriate;
+* signpost relationship.
+
+The ranking procedure must be inspectable.
+
+⸻
+
+24. Ranking Is Not Truth
+
+High relevance does not establish truth.
+
+Maintain the distinction:
+
+ranking
+=
+what should be examined first
+
+versus:
+
+reasoning
+=
+what follows from the selected data/rules
+
+⸻
+
+25. Deterministic Attention
+
+MNN2 attention should combine indexes and ranking.
+
+Conceptually:
+
+Question
+   ↓
+entities + predicates + time + goal
+   ↓
+parallel indexes
+   ↓
+candidate intersection/union
+   ↓
+explicit ranking
+   ↓
+small relevant working set
+   ↓
+MNN1
+
+Record why each selected item was considered relevant.
+
+⸻
+
+26. Nuance Representation
+
+Represent modifiers that materially affect meaning.
+
+Examples:
+
+always
+usually
+sometimes
+only
+except
+probably
+possibly
+must
+may
+should
+apparently
+reportedly
+approximately
+exactly
+nearly
+
+Do not strip them during canonicalisation.
+
+Represent their semantic effect explicitly where supported.
+
+Example:
+
+modal(may, proposition(...)).
+
+or:
+
+qualified(
+    proposition(...),
+    approximately
+).
+
+⸻
+
+27. Negation
+
+Distinguish:
+
+X is not red.
+It is unknown whether X is red.
+No evidence says X is red.
+
+Do not collapse absence of knowledge into explicit negation.
+
+⸻
+
+28. Contradictions
+
+When conflicting propositions occur:
+
+t1: A is red.
+t2: A is blue.
+
+first determine whether:
+
+* the state changed;
+* sources disagree;
+* contexts differ;
+* a hypothetical is involved;
+* one statement corrects another.
+
+Only report a contradiction after contextual/temporal resolution fails.
+
+⸻
+
+29. Corrections
+
+Recognise:
+
+Actually...
+I meant...
+Correction...
+No, X rather than Y.
+
+Represent correction relations explicitly.
+
+Do not simply delete history.
+
+Example:
+
+supersedes(NewEvent, OldEvent).
+
+This preserves the conversational time series.
+
+⸻
+
+30. Knowledge Application
+
+MNN2 should support applying one piece of knowledge to another.
+
+Conceptually:
+
+Knowledge A
+      +
+Knowledge B
+      ↓
+applicable relation/algorithm?
+      ↓
+MNN1
+      ↓
+Knowledge C
+
+This can be repeated recursively.
+
+However, avoid unrestricted combinatorial “everything × everything” evaluation.
+
+Use relevance indexes, types, preconditions and goals to constrain candidate combinations.
+
+⸻
+
+31. Knowledge-to-Knowledge Matching
+
+Each canonical proposition should expose:
+
+predicate
+arguments
+types
+relations
+time
+context
+dependencies
+
+Use these properties to determine whether another rule, fact or neuroalgorithm can consume it.
+
+⸻
+
+32. Recursive Knowledge Application
+
+Permit:
+
+Fact
+ ↓
+Rule A
+ ↓
+Derived Fact
+ ↓
+Rule B
+ ↓
+Derived Fact
+ ↓
+Algorithm C
+ ↓
+Answer
+
+Use cycle detection.
+
+Prevent infinite reapplication.
+
+⸻
+
+33. MNN1 Invocation
+
+Define an interface approximately equivalent to:
+
+mnn1_reason(
+    Goal,
+    Facts,
+    Rules,
+    Context,
+    Result,
+    Trace
+).
+
+MNN2 prepares the symbolic inputs.
+
+MNN1 performs algorithmic reasoning.
+
+MNN2 then converts the result and trace into appropriate conversational output.
+
+⸻
+
+34. Human-Readable Trace
+
+As with MNN1, primary traces must be expressed through data.
+
+Example:
+
+Question:
+What colour is John's fruit?
+Relevant information:
+John owns the apple.
+The apple is red.
+Reasoning:
+The object owned by John is the apple.
+The apple is red.
+Answer:
+John's fruit is red.
+
+Do not normally show:
+
+N7 → N21 → R4 → N19
+
+Such details belong in debug mode.
+
+⸻
+
+35. Temporal Explanation
+
+Example:
+
+Monday:
+John worked at A.
+Wednesday:
+John left A.
+Friday:
+John joined B.
+Question:
+Where does John currently work?
+
+Trace:
+
+John initially worked at A.
+He later left A.
+He subsequently joined B.
+The later employment state supersedes the earlier one.
+Therefore:
+John currently works at B.
+
+⸻
+
+36. Response Planning
+
+Do not directly stringify the first successful Prolog result.
+
+Create a response plan.
+
+Example:
+
+response_plan([
+    answer(MainAnswer),
+    explanation(Reasoning),
+    qualification(Qualifier)
+]).
+
+Possible sections:
+
+* direct answer;
+* explanation;
+* evidence;
+* uncertainty;
+* alternative interpretation;
+* next useful detail.
+
+Only include sections useful for the query.
+
+⸻
+
+37. Response Modes
+
+Support:
+
+concise
+normal
+detailed
+technical
+debug
+
+concise may return primarily the answer.
+
+normal gives useful reasoning.
+
+detailed gives fuller data-level reasoning.
+
+technical may discuss algorithms.
+
+debug may expose Prolog/MNN internals.
+
+⸻
+
+38. Natural-Language Generation
+
+Generate responses from structured results.
+
+Separate:
+
+reasoning result
+
+from:
+
+surface wording
+
+The same result should be expressible in multiple styles without rerunning the underlying reasoning.
+
+⸻
+
+39. Rule-Based Language Generation
+
+Initial generation can use deterministic templates.
+
+Example:
+
+render(
+    owns_colour(Person,Object,Colour),
+    Text
+).
+
+Do not require a statistical language model for basic operation.
+
+Allow optional external language generation adapters later, but preserve the symbolic result as the authoritative reasoning structure.
+
+⸻
+
+40. Imported Documents
+
+Support loading:
+
+* .txt;
+* .md;
+* structured JSON;
+* CSV where relevant;
+* HTML text where practical.
+
+Documents should be segmented into:
+
+document
+ ↓
+sections
+ ↓
+paragraphs
+ ↓
+sentences
+ ↓
+canonical propositions/rules
+
+Preserve links from canonical knowledge back to source text.
+
+⸻
+
+41. Document Time Series
+
+Where documents contain dates or revisions, support chronological knowledge.
+
+Example:
+
+Policy v1 → Policy v2 → Policy v3
+
+Questions should be able to distinguish:
+
+What was the rule in 2024?
+What is the current rule?
+What changed?
+
+⸻
+
+42. Source Provenance
+
+Store:
+
+source(
+    KnowledgeId,
+    SourceType,
+    SourceId,
+    Location,
+    OriginalText
+).
+
+Human explanations should be able to identify the relevant source data when requested.
+
+⸻
+
+43. Memory Layers
+
+Use several explicit memory layers.
+
+Immediate working memory
+        ↓
+Conversation memory
+        ↓
+Topic/project memory
+        ↓
+Imported knowledge
+        ↓
+Algorithm library
+
+Each layer should have distinct retrieval rules.
+
+Do not treat all stored information as equally relevant.
+
+⸻
+
+44. Time-Series Memory
+
+Memory should permit questions such as:
+
+What did we initially think?
+What changed?
+What was corrected?
+What remained unresolved?
+What was the latest decision?
+What happened between X and Y?
+
+These require relationships between events, not merely retrieval of isolated messages.
+
+⸻
+
+45. Decision History
+
+Represent decisions explicitly.
+
+decision(
+    Id,
+    Time,
+    Topic,
+    Decision,
+    Reasons,
+    Supersedes
+).
+
+This is useful for project-oriented chatbot use.
+
+⸻
+
+46. Open Questions
+
+Track unresolved questions:
+
+open_question(
+    Id,
+    Context,
+    Question,
+    CreatedAt
+).
+
+Mark them resolved when later information answers them.
+
+This permits:
+
+What questions are still unresolved?
+
+⸻
+
+47. Goals
+
+Represent conversational/project goals:
+
+goal(
+    GoalId,
+    Description,
+    Status,
+    Dependencies,
+    Context
+).
+
+MNN2 may use goals for relevance ranking.
+
+Full autonomous goal pursuit belongs primarily to MNN3.
+
+⸻
+
+48. Topic Detection
+
+Maintain explicit topics.
+
+Example:
+
+MNN architecture
+→ benchmarking
+→ chatbot
+→ time series
+→ back to benchmarking
+
+A later return to benchmarking should reactivate relevant context rather than treating the discussion as entirely new.
+
+⸻
+
+49. Context Stack
+
+Support nested discussions:
+
+main topic
+   ↓
+subproblem
+   ↓
+example
+   ↓
+hypothetical
+
+When the hypothetical ends, return to its parent context.
+
+⸻
+
+50. Hypothetical Worlds
+
+Do not contaminate real/contextual knowledge with hypothetical statements.
+
+Example:
+
+Suppose John worked for B...
+
+Create:
+
+context(hypothetical_17,...).
+
+Facts derived inside that context remain scoped unless explicitly promoted.
+
+⸻
+
+51. Q&A Rules
+
+Implement explicit Q&A mappings where useful.
+
+Example:
+
+qa_rule(
+    question_pattern(
+        colour_of_owned_object(Person)
+    ),
+    goal(
+        owns(Person,Object),
+        colour(Object,Colour)
+    )
+).
+
+Q&A patterns should compile into MNN1 reasoning goals rather than merely return canned answers.
+
+⸻
+
+52. Signpost Rules
+
+Examples:
+
+signpost_rule("because", cause).
+signpost_rule("therefore", consequence).
+signpost_rule("however", contrast).
+signpost_rule("for example", example).
+signpost_rule("in summary", summary).
+
+Extend these beyond literal phrase matching by using sentence structure where possible.
+
+⸻
+
+53. Interpretation Feedback
+
+Permit the user to correct MNN2:
+
+No, by "bank" I meant the river bank.
+
+Store:
+
+previous interpretation
+        ↓
+correction
+        ↓
+new interpretation
+
+Use corrections as test cases for the interpreter.
+
+⸻
+
+54. Interpretation Learning
+
+Interpretation improvements should follow a controlled cycle:
+
+utterance
+ ↓
+interpretation
+ ↓
+user correction / benchmark result
+ ↓
+counterexample
+ ↓
+S2A/AIOC
+ ↓
+new interpretation rule
+ ↓
+regression tests
+ ↓
+incorporate
+
+Do not silently create unrestricted rules from a single ambiguous correction.
+
+⸻
+
+55. AIOC in MNN2
+
+AIOC should optimise recurring interpretive pipelines.
+
+Example:
+
+pronoun resolution
+→ temporal resolution
+→ ownership lookup
+→ property lookup
+
+If this composition repeatedly solves a class of questions, investigate whether it can become a macro-neuroalgorithm.
+
+Example:
+
+"current property of previously referenced owned object"
+
+The resulting macro must remain general and testable.
+
+⸻
+
+56. Algorithm Incorporation From Language
+
+Users may explicitly teach algorithms.
+
+Example:
+
+To calculate the sale price,
+subtract the discount from the original price.
+
+MNN2 should:
+
+interpret language
+ ↓
+extract candidate specification
+ ↓
+send to S2A/MNN1
+ ↓
+construct algorithm
+ ↓
+test
+ ↓
+incorporate if verified
+
+⸻
+
+57. Algorithm Retrieval From Questions
+
+Question:
+
+How much is a $100 product after a $20 discount?
+
+Interpretation:
+
+original_price(100).
+discount(20).
+goal(final_price).
+
+Retrieve:
+
+sale-price algorithm
+
+MNN1 executes it.
+
+MNN2 responds:
+
+The final price is $80 because the $20 discount is subtracted from the $100 original price.
+
+⸻
+
+58. Knowledge Combination Control
+
+Avoid combinatorial explosion.
+
+Do not execute:
+
+every fact × every rule × every algorithm
+
+Instead:
+
+goal
+ ↓
+required output type
+ ↓
+relevant predicates
+ ↓
+relevant entities/time/context
+ ↓
+candidate algorithms
+ ↓
+precondition check
+ ↓
+execute
+
+This is a major role of MNN2’s deterministic attention system.
+
+⸻
+
+59. Ranking Dimensions
+
+MNN2 may maintain a ranking vector such as:
+
+rank(
+    Candidate,
+    [
+        entity_match(...),
+        predicate_match(...),
+        temporal_match(...),
+        context_match(...),
+        goal_match(...),
+        specificity(...),
+        recency(...)
+    ]
+).
+
+Prefer explicit lexicographic or rule-based ranking initially rather than opaque weighted scoring.
+
+⸻
+
+60. Explain Ranking When Requested
+
+For example:
+
+I used the Friday employment statement rather than Monday's statement because it is the later state and no subsequent employment change is recorded.
+
+This is preferable to:
+
+relevance score = 0.934
+
+⸻
+
+61. Summarisation
+
+Provide deterministic structured summarisation where possible.
+
+Extract:
+
+* topic;
+* major propositions;
+* decisions;
+* changes;
+* evidence;
+* unresolved questions;
+* conclusions.
+
+Then generate readable prose from this structure.
+
+Do not define summarisation merely as truncation.
+
+⸻
+
+62. Analysis Mode
+
+For analysis requests:
+
+question
+ ↓
+decompose
+ ↓
+retrieve relevant knowledge
+ ↓
+identify competing propositions
+ ↓
+apply rules/algorithms
+ ↓
+derive implications
+ ↓
+identify limitations
+ ↓
+construct synthesis
+
+Maintain provenance throughout.
+
+⸻
+
+63. Everything-Applied-to-Everything
+
+Support this idea only in a constrained form.
+
+Use:
+
+new knowledge X
+      ↓
+find compatible predicates/types/goals
+      ↓
+retrieve potentially applicable rules/algorithms
+      ↓
+apply only compatible combinations
+      ↓
+derive new knowledge
+
+This provides useful cross-knowledge reasoning without literal combinatorial comparison of every stored object.
+
+⸻
+
+64. Novel Connection Discovery
+
+Optionally detect when previously separate knowledge structures can interact.
+
+Example:
+
+Algorithm A produces type T.
+Algorithm B consumes type T.
+
+Suggest/test:
+
+A → B
+
+Send candidate composition through AIOC before permanent incorporation.
+
+⸻
+
+65. Data-Level Explanation Requirement
+
+All ordinary reasoning explanations must prioritise:
+
+original data
+ ↓
+meaningful intermediate data
+ ↓
+result
+
+not:
+
+internal node IDs
+
+Example:
+
+The order was placed on Monday.
+Shipping takes three days.
+Three days after Monday is Thursday.
+Therefore the expected shipping date is Thursday.
+
+⸻
+
+66. Debug Trace
+
+Debug mode may additionally expose:
+
+canonical forms
+bindings
+index hits
+ranked candidates
+rule IDs
+neuroalgorithm IDs
+working-memory states
+MNN1 trace
+AIOC metadata
+
+Keep this separate from ordinary user explanations.
+
+⸻
+
+67. Failure Modes
+
+Support explicit results such as:
+
+insufficient_information
+ambiguous_interpretation
+unresolved_reference
+contradictory_sources
+no_applicable_rule
+no_applicable_algorithm
+temporal_ambiguity
+unsupported_question
+unverified_inference
+
+Convert them into helpful natural-language responses.
+
+⸻
+
+68. Do Not Hallucinate Missing Knowledge
+
+If:
+
+John owns something.
+
+and the question is:
+
+What colour is it?
+
+MNN2 must not invent a colour.
+
+It should identify the missing property.
+
+⸻
+
+69. Repository Structure
+
+Suggested:
+
+mnn2/
+│
+├── README.md
+├── LICENSE
+├── index.html
+│
+├── css/
+├── js/
+│
+├── prolog/
+│   ├── mnn2.pl
+│   ├── chatbot.pl
+│   ├── interpreter.pl
+│   ├── canonicalise.pl
+│   ├── parser.pl
+│   ├── reference_resolution.pl
+│   ├── context.pl
+│   ├── context_stack.pl
+│   ├── time_series.pl
+│   ├── temporal_reasoning.pl
+│   ├── state.pl
+│   ├── signposts.pl
+│   ├── ranking.pl
+│   ├── attention.pl
+│   ├── nuance.pl
+│   ├── negation.pl
+│   ├── contradiction.pl
+│   ├── corrections.pl
+│   ├── rules.pl
+│   ├── qa.pl
+│   ├── question_decomposition.pl
+│   ├── working_memory.pl
+│   ├── knowledge_application.pl
+│   ├── response_planner.pl
+│   ├── generator.pl
+│   ├── explain.pl
+│   └── provenance.pl
+│
+├── adapters/
+│   ├── mnn1_adapter.pl
+│   ├── s2a_adapter.pl
+│   └── aioc_adapter.pl
+│
+├── import/
+│   ├── text.pl
+│   ├── markdown.pl
+│   ├── html.pl
+│   ├── json.pl
+│   └── csv.pl
+│
+├── memory/
+│   ├── conversation.pl
+│   ├── project.pl
+│   ├── documents.pl
+│   └── algorithms.pl
+│
+├── benchmarks/
+│   ├── interpretation.pl
+│   ├── temporal.pl
+│   ├── qa.pl
+│   ├── ranking.pl
+│   ├── reference_resolution.pl
+│   ├── context.pl
+│   └── report.pl
+│
+└── tests/
+    ├── unit/
+    ├── integration/
+    ├── regression/
+    └── conversation/
+
+⸻
+
+70. Web Chatbot
+
+index.html should provide a usable chatbot rather than only a development interface.
+
+Include:
+
+* conversation panel;
+* text input;
+* Send;
+* Clear conversation;
+* Load text/document;
+* Save/export knowledge;
+* reasoning-detail selector;
+* current-context viewer;
+* time-series viewer;
+* rules viewer;
+* algorithm viewer;
+* benchmark interface.
+
+Keep advanced/debug panels collapsible.
+
+⸻
+
+71. Time-Series Viewer
+
+Provide an optional interface such as:
+
+09:00  User states A
+09:03  Rule B introduced
+09:10  A corrected to C
+09:12  Decision D reached
+09:30  New evidence E changes D
+
+Allow selection of an event to inspect:
+
+* original text;
+* canonical representation;
+* relationships;
+* superseded/superseding events;
+* derived knowledge.
+
+⸻
+
+72. Example: Conversational Correction
+
+Conversation:
+
+User:
+Alice works for Alpha.
+User:
+Alice moved to Beta last month.
+User:
+Actually, she moved to Gamma, not Beta.
+User:
+Where does Alice work?
+
+Expected:
+
+Alice works for Gamma.
+You first said she worked for Alpha, then that she moved to Beta. You subsequently corrected the destination to Gamma, so Gamma is the current stated workplace.
+
+⸻
+
+73. Example: Rules + Q&A
+
+Input:
+
+A premium customer receives free shipping.
+Alice is a premium customer.
+
+Question:
+
+Does Alice receive free shipping?
+
+Output:
+
+Yes. Alice is a premium customer, and premium customers receive free shipping.
+
+⸻
+
+74. Example: Signposting
+
+Input:
+
+Sales increased.
+However, profit decreased because costs rose.
+
+Question:
+
+What happened?
+
+Desired interpretation:
+
+Sales increased, but that did not translate into higher profit. Profit decreased because rising costs offset the sales improvement.
+
+The contrast and causal relationship should be represented explicitly.
+
+⸻
+
+75. Example: Temporal Reasoning
+
+Input:
+
+The project started in January.
+Testing began in March.
+The launch was delayed in April.
+The product launched in June.
+
+Question:
+
+What happened between testing and launch?
+
+Expected reasoning:
+
+Testing began in March.
+The launch was delayed in April.
+The product eventually launched in June.
+Therefore the recorded event between testing and launch was the April delay.
+
+⸻
+
+76. Example: Multi-Step Q&A
+
+Knowledge:
+
+John owns the apple.
+The apple is in the kitchen.
+The kitchen is upstairs.
+
+Question:
+
+Where is John's apple?
+
+Possible answer:
+
+John's apple is in the kitchen, which is upstairs.
+
+Detailed trace:
+
+John owns the apple.
+The apple is in the kitchen.
+The kitchen is upstairs.
+Therefore John's apple is in the upstairs kitchen.
+
+⸻
+
+77. Example: Knowledge Application
+
+Input:
+
+A customer receives a 10% discount if they spend more than $100.
+Alice spent $150.
+The listed price is $200.
+
+Question:
+
+What should Alice pay?
+
+MNN2:
+
+interpret question
+ ↓
+retrieve discount rule
+ ↓
+establish Alice qualifies
+ ↓
+invoke MNN1 arithmetic algorithm
+ ↓
+calculate discount
+ ↓
+calculate final price
+
+Output:
+
+Alice should pay $180. Her $150 spending qualifies her for the 10% discount, and 10% off the $200 listed price is $20.
+
+⸻
+
+78. Benchmark Categories
+
+Create rigorous benchmarks for:
+
+* canonicalisation;
+* paraphrases;
+* pronouns;
+* ambiguous references;
+* corrections;
+* temporal ordering;
+* state changes;
+* contradictory statements;
+* signposting;
+* causal relationships;
+* rules;
+* Q&A;
+* multi-step Q&A;
+* ranking;
+* distractor resistance;
+* context switching;
+* hypothetical isolation;
+* document reasoning;
+* knowledge composition;
+* response explanation.
+
+⸻
+
+79. Distractor Testing
+
+Example:
+
+John owns an apple.
+Mary likes music.
+Paris is in France.
+The apple is red.
+Bob arrived yesterday.
+
+Question:
+
+What colour is John's apple?
+
+The unrelated information should not affect the answer.
+
+Measure how many irrelevant propositions are inspected.
+
+⸻
+
+80. Long-Conversation Testing
+
+Generate conversations of increasing size:
+
+10 events
+100 events
+1,000 events
+10,000 events
+
+Test whether indexing prevents retrieval cost from degenerating into indiscriminate full-history scanning.
+
+⸻
+
+81. Temporal Generalisation Testing
+
+Train/develop using expressions such as:
+
+before
+after
+yesterday
+
+and test composition involving:
+
+before X but after Y
+between
+until
+since
+latest
+current
+previous
+
+Distinguish explicit rule coverage from genuine compositional handling.
+
+⸻
+
+82. Interpretation Ablations
+
+Provide configurations such as:
+
+MNN2-0 = MNN1 + literal command interface
+MNN2-A = + canonicalisation
+MNN2-B = + conversational context
+MNN2-C = + time series
+MNN2-D = + ranking
+MNN2-E = + signposting
+MNN2-F = + rules
+MNN2-G = + Q&A decomposition
+MNN2-H = + nuance
+MNN2-I = + AIOC interpretation optimisation
+MNN2   = complete system
+
+Benchmark each.
+
+⸻
+
+83. Metrics
+
+Measure:
+
+* interpretation accuracy;
+* reference-resolution accuracy;
+* temporal reasoning accuracy;
+* rule reasoning accuracy;
+* Q&A exact match;
+* multi-step accuracy;
+* distractor resistance;
+* context-switch accuracy;
+* correction handling;
+* contradiction handling;
+* provenance completeness;
+* explanation correctness;
+* number of retrieved propositions;
+* number of candidate algorithms;
+* reasoning steps;
+* response latency;
+* memory usage;
+* regression failures.
+
+⸻
+
+84. Explanation Accuracy Test
+
+Do not merely test whether the final answer is correct.
+
+Also verify that the explanation uses facts that actually contributed to the answer.
+
+Prevent post-hoc explanations unrelated to execution.
+
+The data-level trace must be derived from the actual reasoning/provenance structure.
+
+⸻
+
+85. Reproducibility
+
+Record:
+
+MNN1 version
+MNN2 version
+algorithm-library version
+knowledge-base version
+configuration
+benchmark version
+random seed
+enabled components
+test results
+
+⸻
+
+86. Automated Tests
+
+Use SWI-Prolog plunit.
+
+Tests must cover:
+
+* parsing;
+* canonicalisation;
+* time-series insertion;
+* temporal relations;
+* context;
+* references;
+* corrections;
+* signposts;
+* ranking;
+* rules;
+* question classification;
+* decomposition;
+* MNN1 calls;
+* response planning;
+* explanations;
+* provenance;
+* contradictions;
+* hypotheticals;
+* knowledge application.
+
+⸻
+
+87. CI
+
+On each significant repository change:
+
+unit tests
+ ↓
+integration tests
+ ↓
+MNN1 compatibility tests
+ ↓
+conversation regression tests
+ ↓
+benchmark subset
+
+Full benchmark suites may run separately if expensive.
+
+⸻
+
+88. MNN1/MNN2 Separation
+
+Maintain this boundary rigorously:
+
+MNN1 asks:
+"What algorithm transforms these inputs into the required result?"
+MNN2 asks:
+"What does the user mean, what information matters, when does it apply, what reasoning goal should be sent to MNN1, and how should the result be communicated?"
+
+This separation is important experimentally and architecturally.
+
+⸻
+
+89. Deferred to MNN3
+
+Do not make MNN2 primarily responsible for:
+
+* autonomous long-running agents;
+* external computer control;
+* autonomous tool use;
+* independent goal generation;
+* multi-agent organisations;
+* resource allocation;
+* autonomous project management;
+* large-scale self-modification;
+* persistent autonomous execution.
+
+Expose interfaces that allow a later MNN3 agent layer to use MNN2.
+
+⸻
+
+90. MNN2 Definition of Success
+
+MNN2 succeeds if it can transform:
+
+natural-language conversation
++
+time
++
+context
++
+rules
++
+knowledge
+
+into:
+
+canonical reasoning problem
+        ↓
+MNN1 algorithms
+        ↓
+correct result
+        ↓
+human-readable data explanation
+        ↓
+appropriate natural-language response
+
+while demonstrating robustness to:
+
+paraphrases
+distractors
+context changes
+corrections
+temporal changes
+ambiguity
+multi-step questions
+unseen combinations
+
+⸻
+
+91. Central MNN2 Cycle
+
+The overall system should approximate:
+
+                 USER / DOCUMENT
+                       ↓
+                  INTERPRET
+                       ↓
+                  CANONICALISE
+                       ↓
+        ┌──────── CONTEXT ────────┐
+        │                         │
+        │       TIME SERIES       │
+        │           ↓             │
+        │       SIGNPOSTS         │
+        │           ↓             │
+        │         RULES           │
+        │           ↓             │
+        │        RANKING          │
+        │           ↓             │
+        └────── ATTENTION ────────┘
+                       ↓
+                 QUESTION/GOAL
+                       ↓
+                      MNN1
+                       ↓
+             ALGORITHMIC REASONING
+                       ↓
+                RESULT + TRACE
+                       ↓
+             RESPONSE INTERPRETER
+                       ↓
+               RESPONSE PLANNER
+                       ↓
+                HUMAN RESPONSE
+                       ↓
+                 NEW EVENT
+                       │
+                       └────────────↺
+
+⸻
+
+92. Relationship Between MNN1 and MNN2
+
+The intended repository relationship is:
+
+MNN1
+│
+├── algorithm discovery
+├── neuroalgorithms
+├── deterministic attention primitives
+├── algorithm composition
+├── AIOC
+├── optimisation
+├── deterministic reasoning
+└── multivariate generalisation
+       │
+       ▼
+MNN2
+│
+├── natural-language interpretation
+├── conversational time series
+├── contextual memory
+├── temporal reasoning
+├── ranking
+├── signposting
+├── rules
+├── Q&A
+├── nuance
+├── knowledge application
+├── response planning
+└── human-readable conversational explanation
+       │
+       ▼
+MNN3
+    agents / goals / tools / autonomous workflows
+
+MNN2 should therefore demonstrate that a deterministic algorithmic MNN can be elevated from solving formal I/O reasoning problems into an interpretable conversational reasoning system without hiding the underlying computation behind an opaque response-generation process.
+
+The essential invariant across MNN1 and MNN2 is:
+
+The system may internally optimise algorithms aggressively, but its explanation of a particular reasoning episode must remain reconstructable from the actual human-readable data that entered, changed and left that computation.
+
+This keeps the experimental progression clean: MNN1 = learn/combine/optimise algorithms; MNN2 = understand and reason conversationally with those algorithms; MNN3 = use that intelligence to pursue goals and operate tools.
