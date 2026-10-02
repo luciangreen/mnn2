@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MNN2 — Interpretive Manual Neuronet</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <p class="eyebrow">DETERMINISTIC CONVERSATIONAL REASONING</p>
+        <h1>MNN2</h1>
+        <p class="subtitle">A data-readable interpretive layer for MNN1</p>
+      </div>
+      <div class="toolbar">
+        <label class="button secondary" for="file-input">Load text</label>
+        <input id="file-input" type="file" accept=".txt,.md,text/plain,text/markdown">
+        <button id="export-button" class="secondary">Export knowledge</button>
+        <button id="clear-button" class="secondary">Clear conversation</button>
+      </div>
+    </header>
+
+    <section class="chat-panel" aria-label="Conversation">
+      <div id="messages" class="messages" aria-live="polite"></div>
+      <form id="message-form">
+        <label class="visually-hidden" for="message-input">Message</label>
+        <textarea id="message-input" rows="2" maxlength="10000"
+                  placeholder="Tell MNN2 something, or ask a question…" required></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+    <section class="inspectors">
+      <details>
+        <summary>Conversation time series</summary>
+        <ol id="timeline" class="timeline"></ol>
+      </details>
+      <details>
+        <summary>Rules and imported knowledge</summary>
+        <div id="rule-list" class="rule-list"></div>
+      </details>
+      <details>
+        <summary>Reasoning details</summary>
+        <p class="note">Answers include the source statements and data-level trace used by the deterministic reasoning core.</p>
+      </details>
+    </section>
+    <footer>Basic operation uses deterministic symbolic rules; unsupported language is retained as source text.</footer>
+  </main>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>

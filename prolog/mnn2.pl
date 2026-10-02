@@ -91,14 +91,16 @@ parse_statement(Source, fact, property(Entity, Property, Value)) :-
 
 capture(Text, Pattern, Captures) :-
     re_matchsub(Pattern, Text, Match, [capture_type(string), caseless(true)]),
-    Match =.. [_|Values],
-    Values = [_|Captures].
+    dict_pairs(Match, _, [_-_|Pairs]),
+    maplist(pair_value, Pairs, Captures).
+
+pair_value(_-Value, Value).
 
 entity_atom(Text, Atom) :-
     string_lower(Text, Lower),
     normalize_space(string(Trimmed), Lower),
     re_replace('^[[:space:]]*(the|a|an)[[:space:]]+'/i, '', Trimmed, WithoutArticle),
-    re_replace('[.!?,;:]+[[:space:]]*$'/'', WithoutArticle, Clean),
+    re_replace('[.!?,;:]+[[:space:]]*$', '', WithoutArticle, Clean),
     normalize_space(string(Flat), Clean),
     split_string(Flat, " ", " ", Parts),
     atomic_list_concat(Parts, '_', Atom).
@@ -112,15 +114,21 @@ maybe_store_rule(Id, Source, _) :-
 maybe_store_rule(_, _, _).
 
 events(Events) :-
-    findall(_{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
-              canonical:Canonical, source:Source, context:Context},
-            stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
+    findall(Event,
+            ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
+              term_string(Canonical, CanonicalText),
+              Event = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
+                        canonical:CanonicalText, source:Source, context:Context}
+            ),
             Events).
 
 rules(Rules) :-
     findall(_{id:Id, condition:Condition, conclusion:Conclusion,
               source:Source, text:Text},
-            stored_rule(Id, Condition, Conclusion, Source, Text),
+            ( stored_rule(Id, ConditionTerm, ConclusionTerm, Source, Text),
+              term_string(ConditionTerm, Condition),
+              term_string(ConclusionTerm, Conclusion)
+            ),
             Rules).
 
 export_knowledge(_{events:Events, rules:Rules}) :-
@@ -174,60 +182,75 @@ question_goal(Text, latest_events, summary_question) :-
     !.
 
 possessive_owner(Text, Owner) :-
-    re_replace("'s[[:space:]]+.*$"/'', Text, OwnerText),
+    re_replace("'s[[:space:]]+.*$", '', Text, OwnerText),
     entity_atom(OwnerText, Owner).
 
 answer_goal(color_of_owned(Person), colour_question, Response) :-
     ranked_event(owns(Person, Object), Ownership, _),
     ranked_event(color(Object, Color), ColourEvent, _),
     !,
-    format(string(Answer), "~w's ~w is ~w.", [Person, Object, Color]),
+    maplist(display_term, [Person, Object, Color], [PersonText, ObjectText, ColorText]),
+    format(string(Answer), "~w's ~w is ~w.", [PersonText, ObjectText, ColorText]),
     evidence([Ownership, ColourEvent], Evidence),
     trace(["The selected owner has the object.", "The object has the recorded colour.", Answer], Trace),
     Response = _{status:answered, answer:Answer, evidence:Evidence, trace:Trace}.
 answer_goal(color_of_owned(Person), colour_question, Response) :-
     find_event(owns(Person, Object), Ownership),
     !,
-    format(string(Answer), "I know ~w owns ~w, but I do not have a recorded colour for it.", [Person, Object]),
+    maplist(display_term, [Person, Object], [PersonText, ObjectText]),
+    format(string(Answer), "I know ~w owns ~w, but I do not have a recorded colour for it.", [PersonText, ObjectText]),
     evidence([Ownership], Evidence),
     Response = _{status:insufficient_information, answer:Answer, evidence:Evidence,
                  trace:["The ownership fact was found; no colour fact for that object was found."]}.
 answer_goal(color_of_owned(Person), colour_question, Response) :-
-    format(string(Answer), "I do not have enough information to identify the colour of ~w's object.", [Person]),
+    display_term(Person, PersonText),
+    format(string(Answer), "I do not have enough information to identify the colour of ~w's object.", [PersonText]),
     Response = _{status:insufficient_information, answer:Answer, evidence:[], trace:[]}.
 answer_goal(current_employer(Person), employment_question, Response) :-
     latest_employment(Person, Employer, Event),
     !,
-    format(string(Answer), "~w currently works at ~w.", [Person, Employer]),
+    maplist(display_term, [Person, Employer], [PersonText, EmployerText]),
+    format(string(Answer), "~w currently works at ~w.", [PersonText, EmployerText]),
     evidence([Event], Evidence),
     Response = _{status:answered, answer:Answer, evidence:Evidence,
                  trace:["Employment events are ordered by insertion sequence.", Answer]}.
 answer_goal(current_employer(Person), employment_question, Response) :-
     find_event(left(Person, Employer), Event),
     !,
-    format(string(Answer), "The latest recorded employment event says ~w left ~w; no later workplace is recorded.", [Person, Employer]),
+    maplist(display_term, [Person, Employer], [PersonText, EmployerText]),
+    format(string(Answer), "The latest recorded employment event says ~w left ~w; no later workplace is recorded.", [PersonText, EmployerText]),
     evidence([Event], Evidence),
     Response = _{status:insufficient_information, answer:Answer, evidence:Evidence,
                  trace:["A departure was found, with no later employment event."]}.
 answer_goal(current_employer(Person), employment_question, Response) :-
-    format(string(Answer), "I do not have a recorded workplace for ~w.", [Person]),
+    display_term(Person, PersonText),
+    format(string(Answer), "I do not have a recorded workplace for ~w.", [PersonText]),
     Response = _{status:insufficient_information, answer:Answer, evidence:[], trace:[]}.
 answer_goal(receives(Person, Benefit), yes_no_question, Response) :-
     stored_rule(_, is_a(Person, Category), receives(Person, Benefit), RuleSource, RuleText),
     ranked_event(is_a(Person, Category), Fact, _),
     !,
-    format(string(Answer), "Yes. ~w is a ~w, and the recorded rule says that ~w receive ~w.", [Person, Category, Category, Benefit]),
+    maplist(display_term, [Person, Category, Benefit], [PersonText, CategoryText, BenefitText]),
+    format(string(Answer), "Yes. ~w is a ~w, and the recorded rule says that ~w receive ~w.", [PersonText, CategoryText, CategoryText, BenefitText]),
     evidence([Fact], FactEvidence),
-    RuleEvidence = _{id:rule, canonical:rule(is_a(Person, Category), receives(Person, Benefit)),
+    term_string(rule(is_a(Person, Category), receives(Person, Benefit)), RuleCanonical),
+    RuleEvidence = _{id:rule, canonical:RuleCanonical,
                      source:RuleText, source_type:RuleSource},
     append(FactEvidence, [RuleEvidence], Evidence),
     Response = _{status:answered, answer:Answer, evidence:Evidence,
                  trace:["The customer's category matches the rule condition.", "The rule derives the requested benefit."]}.
 answer_goal(receives(Person, Benefit), yes_no_question, Response) :-
-    format(string(Answer), "I cannot determine whether ~w receives ~w from the recorded facts and rules.", [Person, Benefit]),
+    maplist(display_term, [Person, Benefit], [PersonText, BenefitText]),
+    format(string(Answer), "I cannot determine whether ~w receives ~w from the recorded facts and rules.", [PersonText, BenefitText]),
     Response = _{status:insufficient_information, answer:Answer, evidence:[], trace:[]}.
 answer_goal(latest_events, summary_question, Response) :-
-    findall(Seq-Event, stored_event(_, Seq, _, _, fact, _, _, _), Pairs),
+    findall(Seq-Event,
+            ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
+              term_string(Canonical, CanonicalText),
+              Event = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
+                        canonical:CanonicalText, source:Source, context:Context}
+            ),
+            Pairs),
     keysort(Pairs, Sorted),
     reverse(Sorted, Descending),
     take(5, Descending, Recent),
@@ -256,15 +279,21 @@ latest_employment(Person, Employer, Event) :-
     Employer \= none.
 
 ranked_event(Canonical, Event, Rank) :-
-    findall(Seq-Record,
-            ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
+    findall(Seq-(Fact-Record),
+            ( stored_event(Id, Seq, Time, Speaker, Type, Fact, Source, Context),
               Record = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
-                         canonical:Canonical, source:Source, context:Context}
+                         canonical:Fact, source:Source, context:Context}
             ),
             Pairs),
-    keysort(Pairs, Sorted),
-    reverse(Sorted, [_-Event|_]),
-    Rank = [exact_entity_match(1), exact_predicate_match(1), recency(Event.sequence)].
+    include(matches_canonical(Canonical), Pairs, Matching),
+    keysort(Matching, Sorted),
+    reverse(Sorted, [_-(SelectedCanonical-Event)|_]),
+    Canonical = SelectedCanonical,
+    Rank = [exact_entity_match(1), exact_predicate_match(1), recency(Sequence)],
+    get_dict(sequence, Event, Sequence).
+
+matches_canonical(Canonical, _-(Fact-_)) :-
+    Fact = Canonical.
 
 find_event(Canonical, Event) :-
     stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
@@ -275,10 +304,18 @@ find_event(Canonical, Event) :-
 evidence(Records, Evidence) :-
     maplist(event_evidence, Records, Evidence).
 
-event_evidence(Event, _{id:Event.id, canonical:Event.canonical, source:Event.source,
-                        sequence:Event.sequence, context:Event.context}).
+event_evidence(Event, _{id:Event.id, canonical:CanonicalText, source:Event.source,
+                        sequence:Event.sequence, context:Event.context}) :-
+    term_string(Event.canonical, CanonicalText).
 
 event_source(Event, Event.source).
+
+display_term(Term, Display) :-
+    (   atom(Term)
+    ->  atomic_list_concat(Parts, '_', Term),
+        atomic_list_concat(Parts, ' ', Display)
+    ;   term_string(Term, Display)
+    ).
 
 trace(Lines, Trace) :-
     maplist(string_string, Lines, Trace).
