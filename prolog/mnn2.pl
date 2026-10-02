@@ -11,6 +11,7 @@
 
 :- use_module(library(lists)).
 :- use_module(library(pcre)).
+:- use_module(library(date)).
 
 :- dynamic stored_event/8.
 :- dynamic stored_rule/5.
@@ -35,7 +36,10 @@ ingest(Text, Speaker, Result) :-
     ;   Type = utterance,
         Canonical = unparsed
     ),
-    assertz(stored_event(Id, Id, now, Speaker, Type, Canonical, Source, conversation)),
+    get_time(Now),
+    stamp_date_time(Now, DateTime, 'UTC'),
+    format_time(string(Time), '%FT%T%z', DateTime),
+    assertz(stored_event(Id, Id, Time, Speaker, Type, Canonical, Source, conversation)),
     maybe_store_rule(Id, Source, Canonical),
     Result = _{id:Id, type:Type, canonical:Canonical, source:Source}.
 
@@ -287,13 +291,15 @@ ranked_event(Canonical, Event, Rank) :-
             Pairs),
     include(matches_canonical(Canonical), Pairs, Matching),
     keysort(Matching, Sorted),
-    reverse(Sorted, [_-(SelectedCanonical-Event)|_]),
+    reverse(Sorted, [_-(SelectedCanonical-Event0)|_]),
     Canonical = SelectedCanonical,
     Rank = [exact_entity_match(1), exact_predicate_match(1), recency(Sequence)],
-    get_dict(sequence, Event, Sequence).
+    get_dict(sequence, Event0, Sequence),
+    put_dict(ranking, Event0, Rank, Event).
 
 matches_canonical(Canonical, _-(Fact-_)) :-
-    Fact = Canonical.
+    copy_term(Canonical, Pattern),
+    Fact = Pattern.
 
 find_event(Canonical, Event) :-
     stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
@@ -305,8 +311,13 @@ evidence(Records, Evidence) :-
     maplist(event_evidence, Records, Evidence).
 
 event_evidence(Event, _{id:Event.id, canonical:CanonicalText, source:Event.source,
-                        sequence:Event.sequence, context:Event.context}) :-
-    term_string(Event.canonical, CanonicalText).
+                        sequence:Event.sequence, context:Event.context,
+                        ranking:RankingText}) :-
+    term_string(Event.canonical, CanonicalText),
+    (   get_dict(ranking, Event, Ranking)
+    ->  maplist(term_string, Ranking, RankingText)
+    ;   RankingText = []
+    ).
 
 event_source(Event, Event.source).
 

@@ -46,6 +46,24 @@ test(missing_property_is_not_invented,
     assertion(Response.status == insufficient_information),
     assertion(sub_string(Response.answer, _, _, _, "do not have a recorded colour")).
 
+test(latest_state_is_selected_and_cited,
+     [setup(reset), cleanup(reset)]) :-
+    ingest("John owns an apple.", _),
+    ingest("The apple is red.", _),
+    ingest("The apple is green.", _),
+    ask("What colour is John's apple?", Response),
+    assertion(Response.status == answered),
+    assertion(sub_string(Response.answer, _, _, _, "apple is green")),
+    get_dict(evidence, Response, [_, ColourEvidence]),
+    assertion(ColourEvidence.source == "The apple is green."),
+    assertion(member("recency(3)", ColourEvidence.ranking)).
+
+test(summary_uses_recorded_source_text,
+     [setup(reset), cleanup(reset)]) :-
+    ingest("John owns an apple.", _),
+    ask("What happened?", Response),
+    assertion(sub_string(Response.answer, _, _, _, "John owns an apple.")).
+
 test(unsupported_language_is_preserved,
      [setup(reset), cleanup(reset)]) :-
     ingest("A complex unsupported sentence.", Result),

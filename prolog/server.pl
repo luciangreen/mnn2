@@ -7,6 +7,12 @@
 :- use_module(library(http/http_files)).
 :- use_module(library(http/http_parameters)).
 
+:- dynamic web_root/1.
+:- prolog_load_context(directory, PrologDir),
+   directory_file_path(PrologDir, '..', RootDir),
+   directory_file_path(RootDir, 'web', WebDir),
+   assertz(web_root(WebDir)).
+
 :- http_handler(root(.), home, []).
 :- http_handler(root(assets/Path), asset(Path), [prefix]).
 :- http_handler(root(api/message), message, [method(post)]).
@@ -19,19 +25,18 @@ start(Port) :-
 
 home(Request) :-
     web_file('index.html', File),
-    http_reply_file(File, [], Request).
+    http_reply_file(File, [unsafe(true)], Request).
 
 asset(Path, Request) :-
     memberchk(Path, ['app.js', 'style.css']),
     web_file(Path, File),
-    http_reply_file(File, [], Request).
+    http_reply_file(File, [unsafe(true)], Request).
 
 web_file(Name, File) :-
-    source_file(mnn2_server:start(_), ServerFile),
-    file_directory_name(ServerFile, PrologDir),
-    directory_file_path(PrologDir, '..', RootDir),
-    directory_file_path(RootDir, 'web', WebDir),
-    directory_file_path(WebDir, Name, File).
+    memberchk(Name, ['index.html', 'app.js', 'style.css']),
+    web_root(WebDir),
+    directory_file_path(WebDir, Name, Candidate),
+    absolute_file_name(Candidate, File, [access(read), file_type(regular)]).
 
 message(Request) :-
     http_read_json_dict(Request, Payload),
@@ -57,14 +62,3 @@ clear(_Request) :-
 export(_Request) :-
     mnn2:export_knowledge(Knowledge),
     reply_json_dict(Knowledge).
-
-:- initialization(main, main).
-
-main :-
-    current_prolog_flag(argv, Arguments),
-    (   Arguments = [PortAtom|_],
-        atom_number(PortAtom, Port)
-    ->  true
-    ;   Port = 8080
-    ),
-    start(Port).

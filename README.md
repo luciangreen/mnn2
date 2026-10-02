@@ -23,7 +23,7 @@ No external Prolog packages are required.
 From the repository root:
 
 ```sh
-swipl -q -s prolog/server.pl -- 8080
+swipl -q -s prolog/server.pl -g "mnn2_server:start(8080),thread_get_message(stop)"
 ```
 
 Open <http://localhost:8080>. Information is kept in memory for the lifetime of
