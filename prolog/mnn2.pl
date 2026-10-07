@@ -113,12 +113,24 @@ parse_correction(Source, employment(Person, NewEmployer), OldId) :-
 resolve_correction_person(PersonText, OldEmployer, Person, Event) :-
     entity_atom(PersonText, Candidate),
     (   memberchk(Candidate, [she, he, they, it])
-    ->  latest_employment(Person, CurrentEmployer, Event),
+    ->  latest_employment_subject(Person, CurrentEmployer, Event),
         correction_employer_matches(CurrentEmployer, OldEmployer)
     ;   Person = Candidate,
         latest_employment(Person, CurrentEmployer, Event),
         correction_employer_matches(CurrentEmployer, OldEmployer)
     ).
+
+latest_employment_subject(Person, Employer, Event) :-
+    findall(Seq-(Entity-Value-Record),
+            ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
+              (Canonical = employment(Entity, Value) ; Canonical = left(Entity, _)),
+              (Canonical = employment(_, _) -> true ; Value = none),
+              event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Record)
+            ),
+            Pairs),
+    keysort(Pairs, Sorted),
+    last(Sorted, _-(Person-Employer-Event)),
+    Employer \= none.
 
 correction_employer_matches(CurrentEmployer, OldEmployer) :-
     (   CurrentEmployer == OldEmployer
@@ -154,19 +166,21 @@ maybe_store_rule(_, _, _).
 events(Events) :-
     findall(Event,
             ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
-              event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Event)
+              event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Record),
+              term_string(Canonical, CanonicalText),
+              put_dict(canonical, Record, CanonicalText, Event)
             ),
             Events).
 
 event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Event) :-
-    term_string(Canonical, CanonicalText),
     findall(RelationText,
             ( stored_relation(Relation, Id, OtherId),
-              term_string(Relation(Id, OtherId), RelationText)
+              RelationTerm =.. [Relation, Id, OtherId],
+              term_string(RelationTerm, RelationText)
             ),
             Relationships),
     Event = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
-              canonical:CanonicalText, source:Source, context:Context,
+              canonical:Canonical, source:Source, context:Context,
               relationships:Relationships}.
 
 rules(Rules) :-
@@ -403,15 +417,13 @@ location_answer(PersonText, ObjectText, [Place|Places], Answer) :-
     (   Places = []
     ->  format(string(Answer), "~w is in ~w.", [Subject, PlaceText])
     ;   maplist(display_term, Places, PlaceTexts),
-        location_clauses(PlaceTexts, Clauses),
+        maplist(location_clause, PlaceTexts, Clauses),
         atomic_list_concat(Clauses, ', which is ', Suffix),
         format(string(Answer), "~w is in ~w, which is ~w.", [Subject, PlaceText, Suffix])
     ).
 
-location_clauses([], []).
-location_clauses([Place], [Place]).
-location_clauses([Place|Places], [Place|Clauses]) :-
-    location_clauses(Places, Clauses).
+location_clause(Place, Clause) :-
+    format(string(Clause), "in ~w", [Place]).
 
 evidence(Records, Evidence) :-
     maplist(event_evidence, Records, Evidence).

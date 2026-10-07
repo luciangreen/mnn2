@@ -65,7 +65,7 @@ test(composed_owned_object_location,
     ingest("The kitchen is in the house.", _),
     ask("Where is John's apple?", Response),
     assertion(Response.status == answered),
-    assertion(sub_string(Response.answer, _, _, _, "John's apple is in kitchen")),
+    assertion(sub_string(Response.answer, _, _, _, "john's apple is in kitchen")),
     assertion(sub_string(Response.answer, _, _, _, "which is in house")),
     assertion(length(Response.evidence, 3)).
 
