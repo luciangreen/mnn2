@@ -50,6 +50,12 @@ Employment statements such as “John works at A”, “John left A”, and “J
 joined B” are ordered by insertion sequence; the latest recorded state is used
 for a workplace question.
 
+Location facts can be composed for an owned object, for example: “John owns an
+apple”, “The apple is in the kitchen”, “The kitchen is in the house”, and “Where
+is John's apple?”. Explicit workplace corrections of the form “Actually, she
+moved to Gamma, not Beta” supersede the latest matching workplace event and
+retain the correction relationship in exported event data.
+
 ## Tests
 
 Run the plunit suite from the repository root:
@@ -66,3 +72,36 @@ provides deterministic conversational ordering, while query answers include
 the source statements actually selected. Natural-language dates, arbitrary
 document formats, broad paraphrase interpretation, context switching,
 hypotheticals, and external MNN1/S2A/AIOC adapters remain future work.
+
+## Remaining unfinished features from the specification
+
+The implementation is an intentionally small foundation; the following
+specification areas are not complete:
+
+- **Language interpretation:** broad paraphrase support, interpretation
+  alternatives and ambiguity handling, general pronoun/reference resolution,
+  sentence-function classification, and preservation of nuance and negation.
+- **Discourse and temporal reasoning:** signpost/causal/contrast relationships,
+  general temporal relations and natural-language date handling, explicit state
+  transitions, contradiction analysis, and general correction language. The
+  current correction support is limited to explicit workplace destination
+  corrections.
+- **Context and memory:** multiple isolated contexts, context stacks,
+  hypothetical worlds, working-memory layers, topic tracking, goals, decisions,
+  and unresolved-question tracking.
+- **Reasoning:** general question decomposition, recursive knowledge/rule
+  application, constrained knowledge composition, algorithm selection, and an
+  MNN1 reasoning adapter. Current rule and question handling covers only a few
+  fixed patterns.
+- **Responses and explanations:** structured response planning, selectable
+  response modes, broader explanation/trace structures, and explanations for
+  ranking and temporal transitions.
+- **Documents and provenance:** structured JSON/CSV/HTML import, document
+  segmentation and revision histories, and source metadata beyond retained
+  utterance text.
+- **Interfaces and evaluation:** current-context and algorithm viewers,
+  benchmark controls, systematic benchmarks/metrics, ablation configurations,
+  and the broader regression suite required by the specification.
+
+The full requirements and examples remain in [`pr1.txt`](pr1.txt); these items
+should be treated as future work rather than implied supported behavior.

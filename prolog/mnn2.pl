@@ -15,6 +15,7 @@
 
 :- dynamic stored_event/8.
 :- dynamic stored_rule/5.
+:- dynamic stored_relation/3.
 :- dynamic event_counter/1.
 
 event_counter(0).
@@ -22,6 +23,7 @@ event_counter(0).
 reset :-
     retractall(stored_event(_, _, _, _, _, _, _, _)),
     retractall(stored_rule(_, _, _, _, _)),
+    retractall(stored_relation(_, _, _)),
     retractall(event_counter(_)),
     assertz(event_counter(0)).
 
@@ -31,15 +33,22 @@ ingest(Text, Result) :-
 ingest(Text, Speaker, Result) :-
     text_string(Text, Source),
     next_event_id(Id),
-    (   parse_statement(Source, Type, Canonical)
-    ->  true
+    (   parse_correction(Source, Canonical, SupersededId)
+    ->  Type = correction
+    ;   parse_statement(Source, Type, Canonical)
+    ->  SupersededId = none
     ;   Type = utterance,
-        Canonical = unparsed
+        Canonical = unparsed,
+        SupersededId = none
     ),
     get_time(Now),
     stamp_date_time(Now, DateTime, 'UTC'),
     format_time(string(Time), '%FT%T%z', DateTime),
     assertz(stored_event(Id, Id, Time, Speaker, Type, Canonical, Source, conversation)),
+    (   SupersededId \= none
+    ->  assertz(stored_relation(supersedes, Id, SupersededId))
+    ;   true
+    ),
     maybe_store_rule(Id, Source, Canonical),
     Result = _{id:Id, type:Type, canonical:Canonical, source:Source}.
 
@@ -93,6 +102,43 @@ parse_statement(Source, fact, property(Entity, Property, Value)) :-
     entity_atom(PropertyText, Property),
     Value = true.
 
+parse_correction(Source, employment(Person, NewEmployer), OldId) :-
+    capture(Source, '^\\s*(?:actually[, ]+)?(.+?)\\s+(?:moved\\s+to|joined)\\s+(.+?),\\s+not\\s+(.+?)\\s*[.!?]?\\s*$', [PersonText, NewEmployerText, OldEmployerText]),
+    entity_atom(NewEmployerText, NewEmployer),
+    entity_atom(OldEmployerText, OldEmployer),
+    resolve_correction_person(PersonText, OldEmployer, Person, OldEvent),
+    get_dict(id, OldEvent, OldId),
+    !.
+
+resolve_correction_person(PersonText, OldEmployer, Person, Event) :-
+    entity_atom(PersonText, Candidate),
+    (   memberchk(Candidate, [she, he, they, it])
+    ->  latest_employment_subject(Person, CurrentEmployer, Event),
+        correction_employer_matches(CurrentEmployer, OldEmployer)
+    ;   Person = Candidate,
+        latest_employment(Person, CurrentEmployer, Event),
+        correction_employer_matches(CurrentEmployer, OldEmployer)
+    ).
+
+latest_employment_subject(Person, Employer, Event) :-
+    findall(Seq-(Entity-Value-Record),
+            ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
+              (Canonical = employment(Entity, Value) ; Canonical = left(Entity, _)),
+              (Canonical = employment(_, _) -> true ; Value = none),
+              event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Record)
+            ),
+            Pairs),
+    keysort(Pairs, Sorted),
+    last(Sorted, _-(Person-Employer-Event)),
+    Employer \= none.
+
+correction_employer_matches(CurrentEmployer, OldEmployer) :-
+    (   CurrentEmployer == OldEmployer
+    ->  true
+    ;   atom_concat(OldEmployer, '_', Prefix),
+        atom_concat(Prefix, _, CurrentEmployer)
+    ).
+
 capture(Text, Pattern, Captures) :-
     re_matchsub(Pattern, Text, Match, [capture_type(string), caseless(true)]),
     dict_pairs(Match, _, [_-_|Pairs]),
@@ -120,11 +166,22 @@ maybe_store_rule(_, _, _).
 events(Events) :-
     findall(Event,
             ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
+              event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Record),
               term_string(Canonical, CanonicalText),
-              Event = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
-                        canonical:CanonicalText, source:Source, context:Context}
+              put_dict(canonical, Record, CanonicalText, Event)
             ),
             Events).
+
+event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Event) :-
+    findall(RelationText,
+            ( stored_relation(Relation, Id, OtherId),
+              RelationTerm =.. [Relation, Id, OtherId],
+              term_string(RelationTerm, RelationText)
+            ),
+            Relationships),
+    Event = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
+              canonical:Canonical, source:Source, context:Context,
+              relationships:Relationships}.
 
 rules(Rules) :-
     findall(_{id:Id, condition:Condition, conclusion:Conclusion,
@@ -172,6 +229,11 @@ question_goal(Text, current_employer(Person), employment_question) :-
     capture(Text, '^\\s*where\\s+does\\s+(.+?)\\s+work\\s*\\??\\s*$', [SubjectText]),
     !,
     entity_atom(SubjectText, Person).
+question_goal(Text, location_of_owned(Person, Object), location_question) :-
+    capture(Text, '^\\s*where\\s+is\\s+(.+?)\\s*''s\\s+(.+?)\\s*\\??\\s*$', [PersonText, ObjectText]),
+    !,
+    entity_atom(PersonText, Person),
+    entity_atom(ObjectText, Object).
 question_goal(Text, current_employer(Person), employment_question) :-
     capture(Text, '^\\s*where\\s+does\\s+(.+?)\\s+currently\\s+work\\s*\\??\\s*$', [SubjectText]),
     !,
@@ -215,9 +277,8 @@ answer_goal(current_employer(Person), employment_question, Response) :-
     !,
     maplist(display_term, [Person, Employer], [PersonText, EmployerText]),
     format(string(Answer), "~w currently works at ~w.", [PersonText, EmployerText]),
-    evidence([Event], Evidence),
-    Response = _{status:answered, answer:Answer, evidence:Evidence,
-                 trace:["Employment events are ordered by insertion sequence.", Answer]}.
+    employment_evidence_trace(Event, Evidence, Trace),
+    Response = _{status:answered, answer:Answer, evidence:Evidence, trace:Trace}.
 answer_goal(current_employer(Person), employment_question, Response) :-
     find_event(left(Person, Employer), Event),
     !,
@@ -247,6 +308,28 @@ answer_goal(receives(Person, Benefit), yes_no_question, Response) :-
     maplist(display_term, [Person, Benefit], [PersonText, BenefitText]),
     format(string(Answer), "I cannot determine whether ~w receives ~w from the recorded facts and rules.", [PersonText, BenefitText]),
     Response = _{status:insufficient_information, answer:Answer, evidence:[], trace:[]}.
+answer_goal(location_of_owned(Person, Object), location_question, Response) :-
+    ranked_event(owns(Person, Object), Ownership, _),
+    location_chain(Object, [Object], Locations, LocationEvents),
+    !,
+    maplist(display_term, [Person, Object], [PersonText, ObjectText]),
+    location_answer(PersonText, ObjectText, Locations, Answer),
+    evidence([Ownership|LocationEvents], Evidence),
+    maplist(event_source, [Ownership|LocationEvents], SourceLines),
+    append(SourceLines, ["The location facts form a linked path from the owned object."], Trace),
+    Response = _{status:answered, answer:Answer, evidence:Evidence, trace:Trace}.
+answer_goal(location_of_owned(Person, Object), location_question, Response) :-
+    find_event(owns(Person, Object), Ownership),
+    !,
+    maplist(display_term, [Person, Object], [PersonText, ObjectText]),
+    format(string(Answer), "I know ~w owns ~w, but I do not have a recorded location for it.", [PersonText, ObjectText]),
+    evidence([Ownership], Evidence),
+    Response = _{status:insufficient_information, answer:Answer, evidence:Evidence,
+                 trace:["The ownership fact was found; no location fact for that object was found."]}.
+answer_goal(location_of_owned(Person, _Object), location_question, Response) :-
+    display_term(Person, PersonText),
+    format(string(Answer), "I do not have enough information to identify the location of ~w's object.", [PersonText]),
+    Response = _{status:insufficient_information, answer:Answer, evidence:[], trace:[]}.
 answer_goal(latest_events, summary_question, Response) :-
     findall(Seq-Event,
             ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
@@ -274,8 +357,7 @@ latest_employment(Person, Employer, Event) :-
             ( stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
               (Canonical = employment(Person, Value) ; Canonical = left(Person, _)),
               (Canonical = employment(_, _) -> true ; Value = none),
-              Record = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
-                         canonical:Canonical, source:Source, context:Context}
+              event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Record)
             ),
             Pairs),
     keysort(Pairs, Sorted),
@@ -284,9 +366,8 @@ latest_employment(Person, Employer, Event) :-
 
 ranked_event(Canonical, Event, Rank) :-
     findall(Seq-(Fact-Record),
-            ( stored_event(Id, Seq, Time, Speaker, Type, Fact, Source, Context),
-              Record = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
-                         canonical:Fact, source:Source, context:Context}
+            (             stored_event(Id, Seq, Time, Speaker, Type, Fact, Source, Context),
+            event_record(Id, Seq, Time, Speaker, Type, Fact, Source, Context, Record)
             ),
             Pairs),
     include(matches_canonical(Canonical), Pairs, Matching),
@@ -303,9 +384,46 @@ matches_canonical(Canonical, _-(Fact-_)) :-
 
 find_event(Canonical, Event) :-
     stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
-    Event = _{id:Id, sequence:Seq, time:Time, speaker:Speaker, type:Type,
-              canonical:Canonical, source:Source, context:Context},
+    event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Event),
     !.
+
+employment_evidence_trace(Event, Evidence, Trace) :-
+    get_dict(id, Event, EventId),
+    (   stored_relation(supersedes, EventId, PreviousId),
+        find_event_by_id(PreviousId, PreviousEvent)
+    ->  evidence([PreviousEvent, Event], Evidence),
+        format(string(TraceLine), "The latest workplace statement corrects the earlier statement: ~w", [Event.source]),
+        Trace = [PreviousEvent.source, TraceLine]
+    ;   evidence([Event], Evidence),
+        Trace = ["Employment events are ordered by insertion sequence.", Event.source]
+    ).
+
+find_event_by_id(Id, Event) :-
+    stored_event(Id, Seq, Time, Speaker, Type, Canonical, Source, Context),
+    event_record(Id, Seq, Time, Speaker, Type, Canonical, Source, Context, Event).
+
+location_chain(Object, Seen, [Place|FurtherPlaces], [Event|FurtherEvents]) :-
+    ranked_event(location(Object, Place), Event, _),
+    \+ memberchk(Place, Seen),
+    (   location_chain(Place, [Place|Seen], FurtherPlaces, FurtherEvents)
+    ->  true
+    ;   FurtherPlaces = [],
+        FurtherEvents = []
+    ).
+
+location_answer(PersonText, ObjectText, [Place|Places], Answer) :-
+    display_term(Place, PlaceText),
+    format(string(Subject), "~w's ~w", [PersonText, ObjectText]),
+    (   Places = []
+    ->  format(string(Answer), "~w is in ~w.", [Subject, PlaceText])
+    ;   maplist(display_term, Places, PlaceTexts),
+        maplist(location_clause, PlaceTexts, Clauses),
+        atomic_list_concat(Clauses, ', which is ', Suffix),
+        format(string(Answer), "~w is in ~w, which is ~w.", [Subject, PlaceText, Suffix])
+    ).
+
+location_clause(Place, Clause) :-
+    format(string(Clause), "in ~w", [Place]).
 
 evidence(Records, Evidence) :-
     maplist(event_evidence, Records, Evidence).

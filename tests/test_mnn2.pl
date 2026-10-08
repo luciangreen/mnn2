@@ -58,6 +58,31 @@ test(latest_state_is_selected_and_cited,
     assertion(ColourEvidence.source == "The apple is green."),
     assertion(member("recency(3)", ColourEvidence.ranking)).
 
+test(composed_owned_object_location,
+     [setup(reset), cleanup(reset)]) :-
+    ingest("John owns the apple.", _),
+    ingest("The apple is in the kitchen.", _),
+    ingest("The kitchen is in the house.", _),
+    ask("Where is John's apple?", Response),
+    assertion(Response.status == answered),
+    assertion(sub_string(Response.answer, _, _, _, "john's apple is in kitchen")),
+    assertion(sub_string(Response.answer, _, _, _, "which is in house")),
+    assertion(length(Response.evidence, 3)).
+
+test(workplace_correction_preserves_supersession,
+     [setup(reset), cleanup(reset)]) :-
+    ingest("Alice works at Alpha.", _),
+    ingest("Alice moved to Beta last month.", _),
+    ingest("Actually, she moved to Gamma, not Beta.", Result),
+    assertion(Result.type == correction),
+    ask("Where does Alice work?", Response),
+    assertion(Response.status == answered),
+    assertion(sub_string(Response.answer, _, _, _, "works at gamma")),
+    assertion(length(Response.evidence, 2)),
+    events(Events),
+    last(Events, Correction),
+    assertion(Correction.relationships == ["supersedes(3,2)"]).
+
 test(summary_uses_recorded_source_text,
      [setup(reset), cleanup(reset)]) :-
     ingest("John owns an apple.", _),
