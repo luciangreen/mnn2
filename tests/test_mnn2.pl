@@ -96,4 +96,21 @@ test(unsupported_language_is_preserved,
     events([Event]),
     assertion(Event.source == "A complex unsupported sentence.").
 
+test(currently_question_finds_person,
+     [setup(reset), cleanup(reset)]) :-
+    ingest("Sam works at Acme.", _),
+    ask("Where does Sam currently work?", Response),
+    assertion(Response.status == answered),
+    assertion(sub_string(Response.answer, _, _, _, "works at acme")).
+
+test(state_is_not_a_location,
+     [setup(reset), cleanup(reset)]) :-
+    ingest("The meeting is in progress.", Event),
+    assertion(Event.canonical \= location(_, _)).
+
+test(place_is_still_a_location,
+     [setup(reset), cleanup(reset)]) :-
+    ingest("The meeting is in Paris.", Event),
+    assertion(Event.canonical == location(meeting, paris)).
+
 :- end_tests(mnn2).
