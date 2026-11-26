@@ -85,8 +85,17 @@ parse_statement(Source, fact, left(Entity, Employer)) :-
     !,
     entity_atom(EntityText, Entity),
     entity_atom(EmployerText, Employer).
+% "X is in progress" and similar describe a state, not a place.
+state_phrase(Text) :-
+    string_lower(Text, Lower),
+    split_string(Lower, " ", " ", Words),
+    Words = [First|_],
+    memberchk(First, ["progress", "trouble", "danger", "doubt", "debt", "love", "charge",
+                      "use", "order", "favour", "favor", "luck", "pain", "shock", "fact", "time"]).
+
 parse_statement(Source, fact, location(Entity, Place)) :-
     capture(Source, '^\\s*(.+?)\\s+is\\s+in\\s+(.+?)\\s*[.!?]?\\s*$', [EntityText, PlaceText]),
+    \+ state_phrase(PlaceText),
     !,
     entity_atom(EntityText, Entity),
     entity_atom(PlaceText, Place).
@@ -225,6 +234,12 @@ question_goal(Text, color_of_owned(Person), colour_question) :-
     capture(Text, '^\\s*what\\s+colou?r\\s+is\\s+(.+?)\\s*\\??\\s*$', [SubjectText]),
     !,
     possessive_owner(SubjectText, Person).
+% The longer "currently" form must come first: the lazy subject of the
+% plain form would otherwise swallow "currently".
+question_goal(Text, current_employer(Person), employment_question) :-
+    capture(Text, '^\\s*where\\s+does\\s+(.+?)\\s+currently\\s+work\\s*\\??\\s*$', [SubjectText]),
+    !,
+    entity_atom(SubjectText, Person).
 question_goal(Text, current_employer(Person), employment_question) :-
     capture(Text, '^\\s*where\\s+does\\s+(.+?)\\s+work\\s*\\??\\s*$', [SubjectText]),
     !,
@@ -234,10 +249,6 @@ question_goal(Text, location_of_owned(Person, Object), location_question) :-
     !,
     entity_atom(PersonText, Person),
     entity_atom(ObjectText, Object).
-question_goal(Text, current_employer(Person), employment_question) :-
-    capture(Text, '^\\s*where\\s+does\\s+(.+?)\\s+currently\\s+work\\s*\\??\\s*$', [SubjectText]),
-    !,
-    entity_atom(SubjectText, Person).
 question_goal(Text, receives(Person, Benefit), yes_no_question) :-
     capture(Text, '^\\s*does\\s+(.+?)\\s+receive\\s+(.+?)\\s*\\??\\s*$', [PersonText, BenefitText]),
     !,
